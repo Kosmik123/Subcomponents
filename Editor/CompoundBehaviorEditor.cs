@@ -79,12 +79,12 @@ namespace Bipolar.Subcomponents.Editor
 			CallReset(newSubcomponent);
 			if (newSubcomponent is SubBehavior behavior)
 				behavior.IsEnabled = true;
-			
+
 			newSubcomponentProperty.managedReferenceValue = newSubcomponent;
 			serializedObject.ApplyModifiedProperties();
 		}
 
-		public static void DrawSubcomponent(SerializedProperty property, ISubcomponent subcomponent)
+		public void DrawSubcomponent(SerializedProperty property, ISubcomponent subcomponent)
 		{
 #if VOLUME9
 			const float height = 17f;
@@ -212,7 +212,7 @@ namespace Bipolar.Subcomponents.Editor
 				var menu = new GenericMenu();
 				menu.AddItem(new GUIContent("Reset"), false, ResetProperty);
 				menu.AddSeparator(string.Empty);
-				menu.AddItem(new GUIContent("bar"), false, null, "Bar");
+				menu.AddItem(new GUIContent("Remove Subcomponent"), false, RemoveSubcomponent);
 				menu.ShowAsContext();
 
 				ev.Use();
@@ -224,10 +224,27 @@ namespace Bipolar.Subcomponents.Editor
 				{
 					childProperty.ResetProperty();
 				}
-				property.serializedObject.ApplyModifiedProperties();
 
 				CallReset(subcomponent);
+				serializedObject.ApplyModifiedProperties();
 			}
+
+			void RemoveSubcomponent()
+			{
+				int arraySize = componentsListProperty.arraySize;
+				for (int i = 0; i < arraySize; i++)
+				{
+					if (SerializedProperty.EqualContents(componentsListProperty.GetArrayElementAtIndex(i), property))
+					{
+						componentsListProperty.DeleteArrayElementAtIndex(i);
+						break;
+					}
+				}
+				serializedObject.ApplyModifiedProperties();
+			}
+
+
+
 
 			//var propertyRect = EditorGUILayout.GetControlRect();
 			//EditorGUI.PropertyField(propertyRect, property);

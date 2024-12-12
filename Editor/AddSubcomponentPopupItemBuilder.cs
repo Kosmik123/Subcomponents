@@ -1,6 +1,4 @@
-﻿#define VOLUME
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEditor.IMGUI.Controls;
 
@@ -10,10 +8,15 @@ namespace Bipolar.Subcomponents.Editor
 	{
 		internal class Node
 		{
-			public string Name { get; set; } = "Subcomponent";
+			public string Name { get; }
 
 			private readonly List<Node> subfolders = new List<Node>();
 			private readonly List<(AddSubcomponentPopup.Item item, int order)> items = new List<(AddSubcomponentPopup.Item item, int order)>();
+
+			public Node(string name)
+			{
+				Name = name;
+			}
 
 			public void AddItem(Type type, string name, int order)
 			{
@@ -29,10 +32,7 @@ namespace Bipolar.Subcomponents.Editor
 				if (index >= 0)
 					return subfolders[index];
 
-				var newSubfolder = new Node
-				{
-					Name = name
-				};
+				var newSubfolder = new Node(name);
 				subfolders.Add(newSubfolder);
 				subfolders.Sort((lhs, rhs) => lhs.Name.CompareTo(rhs.Name));
 				return newSubfolder;
@@ -40,7 +40,6 @@ namespace Bipolar.Subcomponents.Editor
 
 			public void Clear()
 			{
-				Name = null;
 				subfolders.Clear();
 				items.Clear();
 			}
@@ -51,14 +50,14 @@ namespace Bipolar.Subcomponents.Editor
 				foreach (var subfolder in subfolders)
 					builtItem.AddChild(subfolder.Build());
 
-				foreach (var it in items)
-					builtItem.AddChild(it.item);
+				foreach (var (item, _) in items)
+					builtItem.AddChild(item);
 
 				return builtItem;
 			}
 		}
 
-		private readonly Node root = new Node();
+		private readonly Node root = new Node("Subcomponent");
 
 		public void AddType(Type type, string[] path, int order)
 		{

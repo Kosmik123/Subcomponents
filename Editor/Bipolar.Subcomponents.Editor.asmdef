@@ -1,0 +1,18 @@
+{
+    "name": "Bipolar.Subcomponents.Editor",
+    "rootNamespace": "Bipolar.Subcomponents.Editor",
+    "references": [
+        "GUID:5c6cd91113af41e478e704a35c2bd096"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

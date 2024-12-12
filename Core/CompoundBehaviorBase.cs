@@ -15,11 +15,11 @@ namespace Bipolar.Subcomponents
 	public class CompoundBehavior<TComponent> : MonoBehaviour, ICompoundBehavior
 		where TComponent : ISubcomponent
 	{
-		[SerializeReference] // it must be serialize reference since every component will be different type
+		[SerializeReference]
 		[HideInInspector]
-		internal protected List<TComponent> subcomponents = new List<TComponent>();
+		internal List<TComponent> subcomponents = new List<TComponent>();
 
-		protected readonly List<IUpdatable> updatableSubcomponents = new List<IUpdatable>();
+		private readonly List<IUpdatable> updatableSubcomponents = new List<IUpdatable>();
 
 		public int SubcomponentsCount => subcomponents.Count;
 		public IReadOnlyList<TComponent> Subcomponents => subcomponents;

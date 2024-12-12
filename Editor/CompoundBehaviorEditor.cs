@@ -25,9 +25,9 @@ namespace Bipolar.Subcomponents.Editor
 		{
 			base.OnInspectorGUI();
 
+			serializedObject.Update();
 			if (componentsListProperty != null)
 			{
-				serializedObject.Update();
 				GUILayout.Space(10);
 				bool changed = false;
 
@@ -60,7 +60,9 @@ namespace Bipolar.Subcomponents.Editor
 				GUILayout.Space(6);
 
 				if (changed)
+				{
 					serializedObject.ApplyModifiedProperties();
+				}
 			}
 		}
 
@@ -74,7 +76,7 @@ namespace Bipolar.Subcomponents.Editor
 
 			var newSubcomponent = Activator.CreateInstance(subcomponentType);
 			newSubcomponentProperty.managedReferenceValue = newSubcomponent;
-			componentsListProperty.serializedObject.ApplyModifiedProperties();
+			serializedObject.ApplyModifiedProperties();
 		}
 
 		public static void DrawSubcomponent(SerializedProperty property, ISubcomponent subcomponent)

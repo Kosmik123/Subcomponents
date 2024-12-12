@@ -13,12 +13,6 @@ public class CompoundExample : CompoundBehavior<ExampleSubcomponentBase>
 {
 	[SerializeField]
 	public int number;
-
-	[ContextMenu("Set")]
-	private void Set()
-	{
-		subcomponents.Add(new ExampleSubcomponentA());
-	}
 }
 
 [AddComponentMenu("Category/Subcomponent A", 10)]

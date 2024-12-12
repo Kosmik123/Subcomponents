@@ -24,6 +24,21 @@ public class ExampleSubcomponentA : ExampleSubcomponentBase
 public class ExampleSubcomponentB : ExampleSubcomponentBase
 {
 	public int health;
+	public Rect rect;
+	public Transform parent;
+	public Vector4 matrix;
+	public Color color;
+	public Gradient background;
+	public Texture image;
+	public AnimationCurve animation;
+	public bool isActive;
+	public Quaternion rotation;
+	public Vector3 position;
+
+	private void Reset()
+	{
+		color = Color.white;
+	}
 }
 
 [AddComponentMenu("Category/SubCateee/Subcomponent C")]

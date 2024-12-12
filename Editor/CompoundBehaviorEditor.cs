@@ -40,7 +40,7 @@ namespace Bipolar.Subcomponents.Editor
 					EditorUtility.DrawSplitter();
 					var subcomponent = compoundBehavior.Subcomponents[i];
 					var itemProperty = componentsListProperty.GetArrayElementAtIndex(i);
-					DrawSubcomponent(itemProperty, subcomponent);
+					DrawSubcomponent(itemProperty, i, subcomponent);
 				}
 				changed |= EditorGUI.EndChangeCheck();
 
@@ -84,7 +84,7 @@ namespace Bipolar.Subcomponents.Editor
 			serializedObject.ApplyModifiedProperties();
 		}
 
-		public void DrawSubcomponent(SerializedProperty property, ISubcomponent subcomponent)
+		public void DrawSubcomponent(SerializedProperty property, int index, ISubcomponent subcomponent)
 		{
 #if VOLUME9
 			const float height = 17f;
@@ -183,7 +183,6 @@ namespace Bipolar.Subcomponents.Editor
 			headerRect.x += 12;
 			bool isExpanded = EditorGUI.Foldout(headerRect, property.isExpanded, GUIContent.none);
 
-
 			var toggleRect = headerRect;
 			toggleRect.x += 4;
 			toggleRect.y += 3;
@@ -213,6 +212,8 @@ namespace Bipolar.Subcomponents.Editor
 				menu.AddItem(new GUIContent("Reset"), false, ResetProperty);
 				menu.AddSeparator(string.Empty);
 				menu.AddItem(new GUIContent("Remove Subcomponent"), false, RemoveSubcomponent);
+				menu.AddItem(new GUIContent("Move Up"), false, index <= 0 ? default(GenericMenu.MenuFunction) : MoveUp);
+				menu.AddItem(new GUIContent("Move Down"), false, index >= componentsListProperty.arraySize - 1 ? default(GenericMenu.MenuFunction) : MoveDown);
 				menu.ShowAsContext();
 
 				ev.Use();
@@ -231,20 +232,23 @@ namespace Bipolar.Subcomponents.Editor
 
 			void RemoveSubcomponent()
 			{
-				int arraySize = componentsListProperty.arraySize;
-				for (int i = 0; i < arraySize; i++)
-				{
-					if (SerializedProperty.EqualContents(componentsListProperty.GetArrayElementAtIndex(i), property))
-					{
-						componentsListProperty.DeleteArrayElementAtIndex(i);
-						break;
-					}
-				}
+				componentsListProperty.DeleteArrayElementAtIndex(index);
 				serializedObject.ApplyModifiedProperties();
 			}
 
+			void MoveUp() => Swap(index - 1);
 
+			void MoveDown() => Swap(index + 1);
 
+			void Swap(int newIndex)
+			{
+				bool wasExpanded = componentsListProperty.GetArrayElementAtIndex(index).isExpanded;
+				bool otherWasExpanded = componentsListProperty.GetArrayElementAtIndex(newIndex).isExpanded;
+				componentsListProperty.MoveArrayElement(index, newIndex);
+				componentsListProperty.GetArrayElementAtIndex(index).isExpanded = otherWasExpanded;
+				componentsListProperty.GetArrayElementAtIndex(newIndex).isExpanded = wasExpanded;
+				serializedObject.ApplyModifiedProperties();
+			}
 
 			//var propertyRect = EditorGUILayout.GetControlRect();
 			//EditorGUI.PropertyField(propertyRect, property);

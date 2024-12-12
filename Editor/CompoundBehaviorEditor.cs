@@ -76,6 +76,10 @@ namespace Bipolar.Subcomponents.Editor
 			var newSubcomponentProperty = componentsListProperty.GetArrayElementAtIndex(count);
 
 			var newSubcomponent = Activator.CreateInstance(subcomponentType);
+			CallReset(newSubcomponent);
+			if (newSubcomponent is SubBehavior behavior)
+				behavior.IsEnabled = true;
+			
 			newSubcomponentProperty.managedReferenceValue = newSubcomponent;
 			serializedObject.ApplyModifiedProperties();
 		}
@@ -222,8 +226,7 @@ namespace Bipolar.Subcomponents.Editor
 				}
 				property.serializedObject.ApplyModifiedProperties();
 
-				var resetMethod = subcomponent.GetType().GetResetMethod();
-				resetMethod?.Invoke(subcomponent, Array.Empty<object>());
+				CallReset(subcomponent);
 			}
 
 			//var propertyRect = EditorGUILayout.GetControlRect();
@@ -265,6 +268,12 @@ namespace Bipolar.Subcomponents.Editor
 			}
 			property.isExpanded = isExpanded;
 #endif
+		}
+
+		private static void CallReset(object subcomponent)
+		{
+			var resetMethod = subcomponent.GetType().GetResetMethod();
+			resetMethod?.Invoke(subcomponent, Array.Empty<object>());
 		}
 
 		private static string GetPropertyTypeName(SerializedProperty property)
@@ -423,11 +432,17 @@ namespace Bipolar.Subcomponents.Editor
 			}
 		}
 
+
+		private static readonly Dictionary<Type, MethodInfo> resetMethodsCache = new Dictionary<Type, MethodInfo>();
 		public static MethodInfo GetResetMethod(this Type type)
 		{
 			const BindingFlags resetBindings = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-			return type.GetMethod("Reset", resetBindings);
+			if (resetMethodsCache.TryGetValue(type, out var resetMethod) == false)
+			{
+				resetMethod = type.GetMethod("Reset", resetBindings);
+				resetMethodsCache.Add(type, resetMethod);
+			}
+			return resetMethod;
 		}
-
 	}
 }

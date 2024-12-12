@@ -38,6 +38,7 @@ public class ExampleSubcomponentB : ExampleSubcomponentBase
 	private void Reset()
 	{
 		color = Color.white;
+		Debug.Log("Reset B");
 	}
 }
 

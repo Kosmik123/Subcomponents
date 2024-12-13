@@ -1,8 +1,5 @@
-﻿#define VOLUME
-
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -86,93 +83,7 @@ namespace Bipolar.Subcomponents.Editor
 
 		public void DrawSubcomponent(SerializedProperty property, int index, ISubcomponent subcomponent)
 		{
-#if VOLUME9
-			const float height = 17f;
-			var backgroundRect = GUILayoutUtility.GetRect(1f, height);
-
-			var labelRect = backgroundRect;
-			labelRect.xMin += 32f;
-			labelRect.xMax -= 20f + 16 + 5;
-
-			var foldoutRect = backgroundRect;
-			foldoutRect.y += 1f;
-			foldoutRect.width = 13f;
-			foldoutRect.height = 13f;
-
-			var toggleRect = backgroundRect;
-			toggleRect.x += 16f;
-			toggleRect.y += 2f;
-			toggleRect.width = 13f;
-			toggleRect.height = 13f;
-
-			// Background rect should be full-width
-			backgroundRect.xMin = 0f;
-			backgroundRect.width += 4f;
-
-			// Background
-			float backgroundTint = EditorGUIUtility.isProSkin ? 0.1f : 1f;
-			EditorGUI.DrawRect(backgroundRect, new Color(backgroundTint, backgroundTint, backgroundTint, 0.2f));
-
-			// Title
-			using (new EditorGUI.DisabledScope(!activeField.boolValue))
-				EditorGUI.LabelField(labelRect, title, EditorStyles.boldLabel);
-
-			// Foldout
-			group.serializedObject.Update();
-			group.isExpanded = GUI.Toggle(foldoutRect, group.isExpanded, GUIContent.none, EditorStyles.foldout);
-			group.serializedObject.ApplyModifiedProperties();
-
-			// Active checkbox
-			activeField.serializedObject.Update();
-			activeField.boolValue = GUI.Toggle(toggleRect, activeField.boolValue, GUIContent.none, CoreEditorStyles.smallTickbox);
-			activeField.serializedObject.ApplyModifiedProperties();
-
-
-			// Context menu
-			Texture menuIcon = null;
-			var menuRect = new Rect(labelRect.xMax + 3f + 16 + 5, labelRect.y + 1f, menuIcon.width, menuIcon.height);
-
-			if (contextAction != null)
-				GUI.DrawTexture(menuRect, menuIcon);
-
-			// Documentation button
-			if (!String.IsNullOrEmpty(documentationURL))
-			{
-				var documentationRect = menuRect;
-				documentationRect.x -= 16 + 5;
-				documentationRect.y -= 1;
-
-				var documentationTooltip = $"Open Reference for {title.text}.";
-				var documentationIcon = new GUIContent(EditorGUIUtility.TrIconContent("_Help").image, documentationTooltip);
-				var documentationStyle = new GUIStyle("IconButton");
-
-				if (GUI.Button(documentationRect, documentationIcon, documentationStyle))
-					System.Diagnostics.Process.Start(documentationURL);
-			}
-
-			// Handle events
-			var e = Event.current;
-
-			if (e.type == EventType.MouseDown)
-			{
-				if (contextAction != null && menuRect.Contains(e.mousePosition))
-				{
-					contextAction(new Vector2(menuRect.x, menuRect.yMax));
-					e.Use();
-				}
-				else if (labelRect.Contains(e.mousePosition))
-				{
-					if (e.button == 0)
-						group.isExpanded = !group.isExpanded;
-					else if (contextAction != null)
-						contextAction(e.mousePosition);
-
-					e.Use();
-				}
-			}
-
-#else
-			var headerRect = GUILayoutUtility.GetRect(1f, 18f); //EditorGUILayout.GetControlRect();
+			var headerRect = GUILayoutUtility.GetRect(1f, 18f);
 
 			var backgroundRect = headerRect;
 			backgroundRect.xMin = 0;
@@ -182,6 +93,8 @@ namespace Bipolar.Subcomponents.Editor
 			headerRect.y -= 1;
 			headerRect.x += 12;
 			bool isExpanded = EditorGUI.Foldout(headerRect, property.isExpanded, GUIContent.none);
+
+			var documentationIcon = new GUIContent(EditorGUIUtility.TrIconContent("_Help").image);
 
 			var toggleRect = headerRect;
 			toggleRect.x += 4;
@@ -230,6 +143,22 @@ namespace Bipolar.Subcomponents.Editor
 				serializedObject.ApplyModifiedProperties();
 			}
 
+			if (isExpanded)
+			{
+				using (new EditorGUI.IndentLevelScope())
+				{
+					// TODO: Add possibility to use custom editor for subcomponents
+
+					foreach (var childProperty in GetChildProperties(property, excludeEnabled: true))
+					{
+						EditorGUILayout.PropertyField(childProperty, true);
+					}
+				}
+				EditorGUILayout.Space(4);
+			}
+			property.isExpanded = isExpanded;
+
+
 			void RemoveSubcomponent()
 			{
 				componentsListProperty.DeleteArrayElementAtIndex(index);
@@ -249,46 +178,6 @@ namespace Bipolar.Subcomponents.Editor
 				componentsListProperty.GetArrayElementAtIndex(newIndex).isExpanded = wasExpanded;
 				serializedObject.ApplyModifiedProperties();
 			}
-
-			//var propertyRect = EditorGUILayout.GetControlRect();
-			//EditorGUI.PropertyField(propertyRect, property);
-
-			if (isExpanded)
-			{
-				using (new EditorGUI.IndentLevelScope())
-				{
-
-					//		// Check if a custom property drawer exists for this type.
-					//		PropertyDrawer customDrawer = GetCustomPropertyDrawer(property);
-					//		if (customDrawer != null)
-					//		{
-					//			// Draw the property with custom property drawer.
-					//			Rect indentedRect = position;
-					//			float foldoutDifference = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-					//			indentedRect.height = customDrawer.GetPropertyHeight(property, label);
-					//			indentedRect.y += foldoutDifference;
-					//			customDrawer.OnGUI(indentedRect, property, label);
-					//		}
-					//		else
-					//		{
-					//			// Draw the properties of the child elements.
-					//			// NOTE: In the following code, since the foldout layout isn't working properly, I'll iterate through the properties of the child elements myself.
-					//			// EditorGUI.PropertyField(position, property, GUIContent.none, true);
-
-					//Rect childPosition = position;
-					//childPosition.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-					foreach (var childProperty in GetChildProperties(property, excludeEnabled: true))
-					{
-						EditorGUILayout.PropertyField(childProperty, true);
-					}
-					//		}
-
-
-				}
-				EditorGUILayout.Space(4);
-			}
-			property.isExpanded = isExpanded;
-#endif
 		}
 
 		private static void CallReset(object subcomponent)
@@ -330,8 +219,7 @@ namespace Bipolar.Subcomponents.Editor
 			}
 		}
 		private void OnDisable()
-		{
-		}
+		{ }
 	}
 
 	public static class EditorUtility
@@ -358,112 +246,6 @@ namespace Bipolar.Subcomponents.Editor
 			EditorGUI.DrawRect(rect, EditorGUIUtility.isProSkin
 				? new Color(0.12f, 0.12f, 0.12f, 1.333f)
 				: new Color(0.6f, 0.6f, 0.6f, 1.333f));
-		}
-	}
-
-	public static class PropertyResetExtensions
-	{
-		public static void ResetProperty(this SerializedProperty property)
-		{
-			switch (property.propertyType)
-			{
-				case SerializedPropertyType.Integer:
-					property.intValue = default;
-					break;
-				case SerializedPropertyType.Boolean:
-					property.boolValue = default;
-					break;
-				case SerializedPropertyType.Float:
-					property.floatValue = default;
-					break;
-				case SerializedPropertyType.String:
-					property.stringValue = default;
-					break;
-				case SerializedPropertyType.Color:
-					property.colorValue = default;
-					break;
-				case SerializedPropertyType.ObjectReference:
-					property.objectReferenceValue = default;
-					break;
-				case SerializedPropertyType.LayerMask:
-					property.intValue = default;
-					break;
-				case SerializedPropertyType.Enum:
-					property.enumValueIndex = default;
-					break;
-				case SerializedPropertyType.Vector2:
-					property.vector2Value = default;
-					break;
-				case SerializedPropertyType.Vector3:
-					property.vector3Value = default;
-					break;
-				case SerializedPropertyType.Vector4:
-					property.vector4Value = default;
-					break;
-				case SerializedPropertyType.Rect:
-					property.rectValue = default;
-					break;
-				case SerializedPropertyType.ArraySize:
-					property.arraySize = default;
-					break;
-				case SerializedPropertyType.Character:
-					// what even is this?!
-					break;
-				case SerializedPropertyType.AnimationCurve:
-					property.animationCurveValue = new AnimationCurve();
-					break;
-				case SerializedPropertyType.Bounds:
-					property.boundsValue = default;
-					break;
-				case SerializedPropertyType.Gradient:
-#if UNITY_2022_1_OR_NEWER
-					property.gradientValue = defalt;
-#endif
-					break;
-				case SerializedPropertyType.Quaternion:
-					property.quaternionValue = default;
-					break;
-				case SerializedPropertyType.ExposedReference:
-					property.exposedReferenceValue = default;
-					break;
-				case SerializedPropertyType.FixedBufferSize:
-					// cannot modify 
-					break;
-				case SerializedPropertyType.Vector2Int:
-					property.vector2IntValue = default;
-					break;
-				case SerializedPropertyType.Vector3Int:
-					property.vector3IntValue = default;
-					break;
-				case SerializedPropertyType.RectInt:
-					property.rectIntValue = default;
-					break;
-				case SerializedPropertyType.BoundsInt:
-					property.boundsIntValue = default;
-					break;
-				case SerializedPropertyType.ManagedReference:
-					property.managedReferenceValue = default;
-					break;
-
-#if UNITY_2021_1_OR_NEWER
-				case SerializedPropertyType.Hash128:
-					property.hash128Value = default;
-					break;
-#endif
-			}
-		}
-
-
-		private static readonly Dictionary<Type, MethodInfo> resetMethodsCache = new Dictionary<Type, MethodInfo>();
-		public static MethodInfo GetResetMethod(this Type type)
-		{
-			const BindingFlags resetBindings = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-			if (resetMethodsCache.TryGetValue(type, out var resetMethod) == false)
-			{
-				resetMethod = type.GetMethod("Reset", resetBindings);
-				resetMethodsCache.Add(type, resetMethod);
-			}
-			return resetMethod;
 		}
 	}
 }

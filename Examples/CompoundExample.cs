@@ -2,26 +2,26 @@
 using UnityEngine;
 
 [System.Serializable]
-public class ExampleSubcomponentBase : SubBehavior
+public class ExampleSubBehavior : SubBehavior
 {
 	[SerializeField]
 	private string name;
 }
 
 [AddComponentMenu("Subcomponent Category/Compound Example")]
-public class CompoundExample : CompoundBehavior<ExampleSubcomponentBase>
+public class CompoundExample : CompoundBehavior<ExampleSubBehavior>
 {
 	[SerializeField]
 	public int number;
 }
 
 [AddComponentMenu("Category/Subcomponent A", 10)]
-public class ExampleSubcomponentA : ExampleSubcomponentBase
+public class ExampleSubcomponentA : ExampleSubBehavior
 {
 	public float power;
 }
 
-public class ExampleSubcomponentB : ExampleSubcomponentBase
+public class ExampleSubcomponentB : ExampleSubBehavior
 {
 	public int health;
 	public Rect rect;
@@ -43,13 +43,13 @@ public class ExampleSubcomponentB : ExampleSubcomponentBase
 }
 
 [AddComponentMenu("Category/SubCateee/Subcomponent C")]
-public class ExampleSubcomponentC : ExampleSubcomponentBase
+public class ExampleSubcomponentC : ExampleSubBehavior
 {
 	public float power;
 }
 
 [AddComponentMenu("Category/Subcomponent D", 0)]
-public class ExampleSubcomponentD : ExampleSubcomponentBase
+public class ExampleSubcomponentD : ExampleSubBehavior
 {
 	public int health;
 }

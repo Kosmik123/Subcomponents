@@ -7,14 +7,13 @@ namespace Bipolar.Subcomponents
 {
 	public interface ISubcomponentOwner
 	{
-
+		Type SubcomponentsType { get; }
 	}
 
 	public interface ICompoundBehavior : ISubcomponentOwner
 	{
 		int SubcomponentsCount { get; }
 		IReadOnlyList<ISubcomponent> Subcomponents { get; }
-		Type SubcomponentsType { get; }
 	}
 
 	public class CompoundBehavior<TComponent> : MonoBehaviour, ICompoundBehavior

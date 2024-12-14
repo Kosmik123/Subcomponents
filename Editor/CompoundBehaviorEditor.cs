@@ -11,8 +11,6 @@ namespace Bipolar.Subcomponents.Editor
 		private SerializedProperty componentsListProperty;
 		private ICompoundBehavior compoundBehavior;
 
-		private static readonly GUIContent buttonContent = new GUIContent($"Add Subcomponent");
-
 		private void OnEnable()
 		{
 			componentsListProperty = serializedObject.FindProperty("subcomponents");
@@ -34,18 +32,18 @@ namespace Bipolar.Subcomponents.Editor
 				EditorGUI.BeginChangeCheck();
 				for (int i = 0; i < count; i++)
 				{
-					EditorUtility.DrawSplitter();
+					EditorUtility.DrawSplitterLayout();
 					var subcomponent = compoundBehavior.Subcomponents[i];
 					var itemProperty = componentsListProperty.GetArrayElementAtIndex(i);
 					DrawSubcomponent(itemProperty, i, subcomponent);
 				}
 				changed |= EditorGUI.EndChangeCheck();
 
-				EditorUtility.DrawSplitter();
-				GUILayout.Space(6);
+				EditorUtility.DrawSplitterLayout();
+				GUILayout.Space(5);
 
 				var buttonRect = EditorGUILayout.GetControlRect();
-				if (count >= 0 && EditorGUI.DropdownButton(buttonRect, buttonContent, FocusType.Keyboard, EditorStyles.miniButton))
+				if (count >= 0 && EditorGUI.DropdownButton(buttonRect, EditorUtility.ButtonContent, FocusType.Keyboard, EditorStyles.miniButton))
 				{
 					var popupRect = buttonRect;
 					popupRect.width = 250;
@@ -67,26 +65,20 @@ namespace Bipolar.Subcomponents.Editor
 		private void AddSubcomponentFromButton(AddSubcomponentPopup.Item item)
 		{
 			var subcomponentType = item.Type;
-			int count = componentsListProperty.arraySize;
-
-			componentsListProperty.InsertArrayElementAtIndex(count);
-			var newSubcomponentProperty = componentsListProperty.GetArrayElementAtIndex(count);
-
-			var newSubcomponent = Activator.CreateInstance(subcomponentType);
-			CallReset(newSubcomponent);
-			if (newSubcomponent is SubBehavior behavior)
-				behavior.IsEnabled = true;
-
-			newSubcomponentProperty.managedReferenceValue = newSubcomponent;
+			EditorUtility.AddSubcomponent(subcomponentType, componentsListProperty);
 			serializedObject.ApplyModifiedProperties();
 		}
+
 
 		public void DrawSubcomponent(SerializedProperty property, int index, ISubcomponent subcomponent)
 		{
 			var headerRect = GUILayoutUtility.GetRect(1f, 18f);
 
+			var isThisList = property.FindPropertyRelative("..");
+
 			var backgroundRect = headerRect;
 			backgroundRect.xMin = 0;
+			backgroundRect.xMax += 4;
 			float backgroundTint = EditorGUIUtility.isProSkin ? 0.1f : 1f;
 			EditorGUI.DrawRect(backgroundRect, new Color(backgroundTint, backgroundTint, backgroundTint, 0.2f));
 
@@ -94,7 +86,7 @@ namespace Bipolar.Subcomponents.Editor
 			headerRect.x += 12;
 			bool isExpanded = EditorGUI.Foldout(headerRect, property.isExpanded, GUIContent.none);
 
-			var documentationIcon = new GUIContent(EditorGUIUtility.TrIconContent("_Help").image);
+			//var documentationIcon = new GUIContent(EditorGUIUtility.TrIconContent("_Help").image);
 
 			var toggleRect = headerRect;
 			toggleRect.x += 4;
@@ -139,8 +131,8 @@ namespace Bipolar.Subcomponents.Editor
 					childProperty.ResetProperty();
 				}
 
-				CallReset(subcomponent);
-				serializedObject.ApplyModifiedProperties();
+				EditorUtility.CallReset(subcomponent);
+				property.serializedObject.ApplyModifiedProperties();
 			}
 
 			if (isExpanded)
@@ -162,7 +154,7 @@ namespace Bipolar.Subcomponents.Editor
 			void RemoveSubcomponent()
 			{
 				componentsListProperty.DeleteArrayElementAtIndex(index);
-				serializedObject.ApplyModifiedProperties();
+				property.serializedObject.ApplyModifiedProperties();
 			}
 
 			void MoveUp() => Swap(index - 1);
@@ -176,14 +168,8 @@ namespace Bipolar.Subcomponents.Editor
 				componentsListProperty.MoveArrayElement(index, newIndex);
 				componentsListProperty.GetArrayElementAtIndex(index).isExpanded = otherWasExpanded;
 				componentsListProperty.GetArrayElementAtIndex(newIndex).isExpanded = wasExpanded;
-				serializedObject.ApplyModifiedProperties();
+				property.serializedObject.ApplyModifiedProperties();
 			}
-		}
-
-		private static void CallReset(object subcomponent)
-		{
-			var resetMethod = subcomponent.GetType().GetResetMethod();
-			resetMethod?.Invoke(subcomponent, Array.Empty<object>());
 		}
 
 		private static string GetPropertyTypeName(SerializedProperty property)
@@ -220,32 +206,5 @@ namespace Bipolar.Subcomponents.Editor
 		}
 		private void OnDisable()
 		{ }
-	}
-
-	public static class EditorUtility
-	{
-		public static void DrawSplitter(bool isBoxed = false)
-		{
-			var rect = GUILayoutUtility.GetRect(1f, 1f);
-			float xMin = rect.xMin;
-			rect.x -= 1;
-
-			// Splitter rect should be full-width
-			rect.xMin = 0f;
-			rect.width += 4f;
-
-			if (isBoxed)
-			{
-				rect.xMin = xMin == 7.0 ? 4.0f : EditorGUIUtility.singleLineHeight;
-				rect.width -= 1;
-			}
-
-			if (Event.current.type != EventType.Repaint)
-				return;
-
-			EditorGUI.DrawRect(rect, EditorGUIUtility.isProSkin
-				? new Color(0.12f, 0.12f, 0.12f, 1.333f)
-				: new Color(0.6f, 0.6f, 0.6f, 1.333f));
-		}
 	}
 }

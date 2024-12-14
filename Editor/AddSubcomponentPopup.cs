@@ -28,7 +28,7 @@ namespace Bipolar.Subcomponents.Editor
 
 		public Type SubcomponentType { get; private set; }
 
-		private AdvancedDropdownItem root;
+		private readonly AdvancedDropdownItem _root;
 
 		public static AddSubcomponentPopup Get(Type subcomponentType)
 		{
@@ -44,7 +44,8 @@ namespace Bipolar.Subcomponents.Editor
 		private AddSubcomponentPopup(Type subcomponentType) : base(new AdvancedDropdownState())
 		{
 			SubcomponentType = subcomponentType;
-			var types = TypeCache.GetTypesDerivedFrom(SubcomponentType);
+			var types = TypeCache.GetTypesDerivedFrom(SubcomponentType)
+				.Where(type => !type.IsAbstract);
 			var builder = new AddSubcomponentPopupItemBuilder();	
 			foreach (var type in types)
 			{
@@ -66,10 +67,10 @@ namespace Bipolar.Subcomponents.Editor
 				builder.AddType(type);
 			}
 
-			root = builder.Build();
+			_root = builder.Build();
 		}
 
-		protected override AdvancedDropdownItem BuildRoot() => root;
+		protected override AdvancedDropdownItem BuildRoot() => _root;
 
 		protected override void ItemSelected(AdvancedDropdownItem item)
 		{

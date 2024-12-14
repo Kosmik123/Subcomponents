@@ -1,11 +1,12 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace Bipolar.Subcomponents
 {
-	internal interface ISubcomponentList 
+	internal interface ISubcomponentList : ISubcomponentOwner
 	{
 		int Count { get; }
 		void Update();
@@ -13,11 +14,13 @@ namespace Bipolar.Subcomponents
 
 	[System.Serializable]
 	public class SubcomponentList<TComponent> : ISubcomponentList, IList<TComponent>, IReadOnlyList<TComponent>
-		where TComponent : ISubcomponent, new()
+		where TComponent : ISubcomponent
 	{
-		[SerializeField] // soon it could be serialize reference
+		[SerializeReference]
+		[HideInInspector]
 		protected List<TComponent> items = new List<TComponent>();
-
+		protected readonly List<IUpdatable> updatableItems = new List<IUpdatable>();
+		
 		public TComponent this[int index]
 		{
 			get => items[index];
@@ -26,15 +29,46 @@ namespace Bipolar.Subcomponents
 
 		public int Count => items.Count;
 		public bool IsReadOnly => ((IList<TComponent>)items).IsReadOnly;
-		public void Add(TComponent item) => items.Add(item);
-		public void Clear() => items.Clear();
+
+		public Type SubcomponentsType => typeof(TComponent);
+
+		public void Add(TComponent item)
+		{
+			items.Add(item);
+			if (item is IUpdatable updatable)
+				updatableItems.Add(updatable);
+		}
+
+		public void Clear()
+		{
+			items.Clear();
+			updatableItems.Clear();
+		}
+
 		public bool Contains(TComponent item) => items.Contains(item);
 		public void CopyTo(TComponent[] array, int arrayIndex) => items.CopyTo(array, arrayIndex);
 		public IEnumerator<TComponent> GetEnumerator() => items.GetEnumerator();
 		public int IndexOf(TComponent item) => items.IndexOf(item);
 		public void Insert(int index, TComponent item) => items.Insert(index, item);
-		public bool Remove(TComponent item) => items.Remove(item);
-		public void RemoveAt(int index) => items.RemoveAt(index);
+		public bool Remove(TComponent item)
+		{
+			if (items.Remove(item) == false)
+				return false;
+
+			if (item is IUpdatable updatable)
+				updatableItems.Remove(updatable);
+
+			return true;
+		}
+
+		public void RemoveAt(int index)
+		{
+			var item = items[index];
+			items.RemoveAt(index);
+			if (item is IUpdatable updatable)
+				updatableItems.Remove(updatable);
+		}
+
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 		public void Enable()
@@ -42,19 +76,26 @@ namespace Bipolar.Subcomponents
 			SubcomponentListUpdater.Instance.AddList(this);
 			foreach (var subcomponent in items.OfType<IEnableCallbackReceiver>())
 				subcomponent.OnEnable();
+
+			updatableItems.Clear();
+			foreach (var subcomponent in items.OfType<IUpdatable>())
+				updatableItems.Add(subcomponent);
 		}
 
 		public void Disable()
 		{
+			SubcomponentListUpdater.Instance.RemoveList(this);
 			foreach (var subcomponent in items.OfType<IDisableCallbackReceiver>())
 				subcomponent.OnDisable();
+
+			updatableItems.Clear();
 		}
 
 	    void ISubcomponentList.Update()
 		{
-			for (int i = 0; i < items.Count; i++)
+			for (int i = 0; i < updatableItems.Count; i++)
 			{
-
+				updatableItems[i].Update();
 			}
 		}
 	}
@@ -80,10 +121,9 @@ namespace Bipolar.Subcomponents
 				Destroy(gameObject);
 		}
 
-		public void AddList(ISubcomponentList list)
-		{
-			lists.Add(list);
-		}
+		public void AddList(ISubcomponentList list) => lists.Add(list);
+
+		public void RemoveList(ISubcomponentList list) => lists.Remove(list);
 
 		private void Update()
 		{
